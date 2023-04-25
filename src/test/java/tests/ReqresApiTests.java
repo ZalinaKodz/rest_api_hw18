@@ -1,48 +1,57 @@
 package tests;
 
 import org.junit.jupiter.api.Test;
+import tests.models.UserData;
+import tests.models.UserSupport;
+
 
 import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.JSON;
-import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static tests.Specs.*;
 
 
 public class ReqresApiTests {
-    public static final String BASE_URL = "https://reqres.in/api";
 
     @Test
-    void checkUserInListUsers() {
+    void checkUserFromListGroovy() {
         given()
-                .log().uri()
+                .spec(Specs.request)
                 .when()
-                .get(BASE_URL + "/users?page=2")
+                .get("/users?page=2")
                 .then()
-                .log().status()
+                .spec(responseSpec)
                 .log().body()
-                .statusCode(200)
-                .body("total", is(12))
-                .body("data[2].id", is(9))
-                .body("data[2].email", is("tobias.funke@reqres.in"))
-                .body("data[2].first_name", is("Tobias"))
-                .body("data[2].last_name", is("Funke"))
-                .body("data[2].avatar", is("https://reqres.in/img/faces/9-image.jpg"))
-                .body(matchesJsonSchemaInClasspath("schema/list_users_schema.json"));
-
+                .body("data.findAll{it.id =~/./}.id.flatten()",
+                        hasItem(9));
     }
-    @Test
-    void getSingleUser() {
-        given()
-                .log().uri()
-                .when()
-                .get(BASE_URL + "/users/2")
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(200)
-                .body("data.id", is(2))
-                .body("data.email", is("janet.weaver@reqres.in"));
 
+    @Test
+    void checkTextInUserList() {
+        UserSupport support = given()
+                .spec(request)
+                .when()
+                .get("/users?page=2")
+                .then()
+                .spec(responseSpec)
+                .log().body()
+                .extract().as(UserSupport.class);
+        assertEquals("To keep ReqRes free, contributions towards server costs are appreciated!", support.getSupport().getText());
+    }
+
+    @Test
+    void checkSingleUser() {
+        UserData data = given()
+                .spec(request)
+                .when()
+                .get("/users/2")
+                .then()
+                .spec(responseSpec)
+                .log().body()
+                .extract().as(UserData.class);
+        assertEquals(2, data.getUser().getId());
+        assertEquals("janet.weaver@reqres.in", data.getUser().getEmail());
     }
 
     @Test
@@ -50,15 +59,13 @@ public class ReqresApiTests {
         String body = "{ \"name\": \"morpheus\",\"job\": \"leader\" }";
 
         given()
-                .log().uri()
+                .spec(request)
                 .body(body)
-                .contentType(JSON)
                 .when()
-                .post(BASE_URL + "/users")
+                .post("/users")
                 .then()
-                .log().status()
+                .spec(responseCreateUser)
                 .log().body()
-                .statusCode(201)
                 .body("name", is("morpheus"))
                 .body("job", is("leader"));
     }
@@ -68,15 +75,13 @@ public class ReqresApiTests {
         String body = "{ \"name\": \"morpheus\",\"job\": \"zion resident\" }";
 
         given()
-                .log().uri()
+                .spec(request)
                 .body(body)
-                .contentType(JSON)
                 .when()
-                .put(BASE_URL + "/users/2")
+                .put("/users/2")
                 .then()
-                .log().status()
+                .spec(responseSpec)
                 .log().body()
-                .statusCode(200)
                 .body("name", is("morpheus"))
                 .body("job", is("zion resident"));
     }
@@ -84,12 +89,11 @@ public class ReqresApiTests {
     @Test
     void deleteUser() {
         given()
+                .spec(request)
                 .log().uri()
                 .when()
-                .delete(BASE_URL + "/users/2")
+                .delete("/users/2")
                 .then()
-                .log().status()
-                .log().body()
-                .statusCode(204);
+                .spec(responseDeleteUser);
     }
 }
