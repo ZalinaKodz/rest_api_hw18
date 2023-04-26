@@ -6,6 +6,7 @@ import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
 
 import static io.restassured.RestAssured.with;
+import static io.restassured.filter.log.LogDetail.BODY;
 import static io.restassured.filter.log.LogDetail.STATUS;
 
 public class Specs {
@@ -17,14 +18,17 @@ public class Specs {
 
     public static ResponseSpecification responseSpec = new ResponseSpecBuilder()
             .log(STATUS)
+            .log(BODY)
             .expectStatusCode(200)
             .build();
     public static ResponseSpecification responseCreateUser = new ResponseSpecBuilder()
             .log(STATUS)
+            .log(BODY)
             .expectStatusCode(201)
             .build();
     public static ResponseSpecification responseDeleteUser = new ResponseSpecBuilder()
             .log(STATUS)
+            .log(BODY)
             .expectStatusCode(204)
             .build();
 }
